@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-slate-900;
+  }
+}
+
+.react-flow__node {
+  @apply shadow-sm border border-slate-200 rounded-lg bg-white;
+}
+
+@layer utilities {
+  .bg-tree-pattern {
+    background-image:
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4)),
+      url('https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=2544&auto=format&fit=crop');
+    /* Fallback or nice texture of trees/leaves */
+  }
+}
+
+.react-flow__handle {
+  @apply bg-slate-400 w-2 h-2;
+}
