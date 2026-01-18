@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { UserPlus, Settings } from 'lucide-react';
 import clsx from 'clsx';
+import { useStore } from '../../store/useStore';
+// import AddMemberModal from '../Member/AddMemberModal'; // Moved to Global
 
 const IconButton = ({
     icon: Icon,
@@ -27,20 +30,34 @@ const IconButton = ({
 };
 
 export default function Toolbar() {
+    const { currentFamily, openAddMemberModal } = useStore();
+
+    const handleAddMemberClick = () => {
+        if (!currentFamily) {
+            alert("Vui lòng chọn một gia phả trước!");
+            return;
+        }
+        openAddMemberModal();
+    };
+
     return (
-        <div className="absolute top-4 right-4 flex items-center gap-3 z-50">
-            <IconButton
-                icon={UserPlus}
-                className="bg-primary text-white hover:bg-emerald-600 border border-transparent"
-                title="Thêm thành viên"
-                onClick={() => alert("Tính năng Thêm Thành Viên sẽ sớm ra mắt!")}
-            />
-            <IconButton
-                icon={Settings}
-                className="bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
-                title="Cài đặt"
-                onClick={() => alert("Tính năng Cài Đặt sẽ sớm ra mắt!")}
-            />
-        </div>
+        <>
+            <div className="absolute top-4 right-4 flex items-center gap-3 z-50">
+                <IconButton
+                    icon={UserPlus}
+                    className="bg-primary text-white hover:bg-emerald-600 border border-transparent"
+                    title="Thêm thành viên"
+                    onClick={handleAddMemberClick}
+                />
+                <IconButton
+                    icon={Settings}
+                    className="bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+                    title="Cài đặt"
+                    onClick={() => alert("Tính năng Cài Đặt sẽ sớm ra mắt!")}
+                />
+            </div>
+
+
+        </>
     );
 }

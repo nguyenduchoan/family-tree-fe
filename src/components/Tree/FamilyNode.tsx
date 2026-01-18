@@ -46,44 +46,89 @@ const MemberCard = ({ member }: { member: any, isPrimary?: boolean }) => {
             {/* Gender Dot */}
             <div className={clsx(
                 "w-1.5 h-1.5 rounded-full shrink-0",
-                member.gender === 'male' ? "bg-blue-400" : "bg-pink-400"
+                member.gender === 'MALE' ? "bg-blue-400" : "bg-pink-400"
             )} />
         </div>
     )
 }
 
 const FamilyNode = ({ id, data, selected }: NodeProps<FamilyNodeData>) => {
-    const { collapsedNodes, toggleCollapse } = useStore();
+    const { collapsedNodes, toggleCollapse, familyData, currentUserMemberId } = useStore();
     const isCollapsed = collapsedNodes.includes(id);
     const hasChildren = data.children && data.children.length > 0;
+    const isCurrentUser = data.primary.id === currentUserMemberId;
+
+    // Helper to calculate total descendants recursively
+    const countDescendants = (memberIds: string[]): number => {
+        if (!memberIds || memberIds.length === 0) return 0;
+        let count = 0;
+        memberIds.forEach(id => {
+            count++; // Count the child itself
+            const member = familyData.find(m => m.id === id);
+            if (member && member.children && member.children.length > 0) {
+                count += countDescendants(member.children);
+            }
+        });
+        return count;
+    };
+
+    const totalChildren = data.children ? data.children.length : 0;
+    const totalDescendants = data.children ? countDescendants(data.children) : 0;
 
     return (
         <div
             className={clsx(
-                "bg-white rounded-xl shadow-lg border-2 transition-all duration-300 relative group flex items-stretch divide-x divide-slate-100",
-                selected ? "border-primary shadow-green-100 scale-105" : "border-transparent hover:border-green-200"
+                "bg-white rounded-xl shadow-lg border-2 transition-all duration-300 relative group flex flex-col items-stretch",
+                selected ? "border-primary shadow-green-100 scale-105" : (isCurrentUser ? "border-emerald-500 hover:border-emerald-600 shadow-md ring-2 ring-emerald-100" : "border-transparent hover:border-green-200")
             )}
         >
+            {isCurrentUser && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-20 shadow-sm border border-emerald-500 uppercase tracking-wide">
+                    Là Bạn
+                </div>
+            )}
             <Handle type="target" position={Position.Top} className="!bg-tree-line !w-3 !h-3" />
 
-            {/* Add Child Button (Visible on Hover) */}
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    alert(`Tính năng thêm con cho ${data.primary.name} sẽ sớm ra mắt!`);
-                }}
-                className="absolute -top-3 -right-3 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all z-30 hover:bg-emerald-600 hover:scale-110"
-                title="Thêm con"
-            >
-                <UserPlus size={14} />
-            </button>
+            {/* Content Row: Primary + [Partner] */}
+            <div className="flex items-stretch divide-x divide-slate-100">
+                {/* Add Child Button (Visible on Hover) */}
+                {/* Warning: FamilyNode context doesn't have isViewer prop, let's inject it or useStore */}
+                {/* Using useStore direct access for simplicity inside component */}
 
-            {/* Primary Member */}
-            <MemberCard member={data.primary} />
+                {useStore.getState().currentFamily?.role !== 'VIEWER' && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            useStore.getState().openAddMemberModal(data.primary.id, 'PARENT_CHILD');
+                        }}
+                        className="absolute -top-3 -right-3 w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all z-30 hover:bg-emerald-600 hover:scale-110"
+                        title="Thêm con (Tạo mới)"
+                    >
+                        <Plus size={14} />
+                    </button>
+                )}
 
-            {/* Partner Member */}
-            {data.partner && (
-                <MemberCard member={data.partner} />
+                {/* Primary Member */}
+                <MemberCard member={data.primary} />
+
+                {/* Partner Member */}
+                {data.partner && (
+                    <MemberCard member={data.partner} />
+                )}
+            </div>
+
+            {/* Stats Footer (Only if there are descendants) */}
+            {totalDescendants > 0 && (
+                <div className="bg-slate-50 border-t border-slate-100 px-3 py-1.5 flex items-center justify-center gap-4 rounded-b-xl">
+                    <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1" title="Số con trực tiếp">
+                        <User size={12} className="text-blue-500" />
+                        <span>{totalChildren} con</span>
+                    </div>
+                    <div className="text-[10px] font-medium text-slate-500 flex items-center gap-1" title="Tổng số hậu duệ (all levels)">
+                        <UserPlus size={12} className="text-purple-500" />
+                        <span>{totalDescendants} hậu duệ</span>
+                    </div>
+                </div>
             )}
 
             <Handle type="source" position={Position.Bottom} className="!bg-tree-line !w-3 !h-3 opacity-0" />

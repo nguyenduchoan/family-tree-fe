@@ -85,7 +85,7 @@ export const processFamilyData = (members: FamilyMember[]) => {
     nodes.forEach(node => {
         const { children } = node.data;
 
-        children.forEach(childId => {
+        children.forEach((childId: string) => {
             const childNodeId = memberToNodeId.get(childId);
             if (childNodeId) {
                 // Determine if we already added this edge (two parents pointing to same child node)

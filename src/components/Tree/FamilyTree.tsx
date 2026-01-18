@@ -4,37 +4,41 @@ import ReactFlow, {
     Background,
     useNodesState,
     useEdgesState,
-    ReactFlowProvider,
     useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { mockFamilyData } from '../../data/mockData';
 import FamilyNode from './FamilyNode';
 import { processFamilyData, getDescendants } from '../../utils/treeUtils';
 import { getLayoutedElements } from '../../utils/layout';
 import { useStore } from '../../store/useStore';
-import Header from '../UI/Header';
+
 import MemberDetailPanel from '../UI/MemberDetailPanel';
+import AddRelationshipModal from '../Member/AddRelationshipModal';
+import AddMemberModal from '../Member/AddMemberModal';
 
 const nodeTypes = {
     familyMember: FamilyNode,
 };
 
 const TreeFlow = () => {
-    const { setNodes: setStoreNodes, setEdges: setStoreEdges, setFamilyData, collapsedNodes } = useStore();
+    const { setNodes: setStoreNodes, setEdges: setStoreEdges, familyData, collapsedNodes, currentFamily, fetchMembers } = useStore();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { fitView } = useReactFlow();
 
     // Initialize Data & Handle Collapse
     useEffect(() => {
-        // Always set mock data first
-        if (useStore.getState().familyData.length === 0) {
-            setFamilyData(mockFamilyData);
+        if (familyData.length === 0 && currentFamily) {
+            fetchMembers(currentFamily.id).catch(console.error);
         }
+    }, [currentFamily, familyData.length, fetchMembers]);
+
+    // Update Layout whenever familyData or collapsedNodes change
+    useEffect(() => {
+        if (familyData.length === 0) return;
 
         // 1. Process data (group couples)
-        const { nodes: allNodes, edges: allEdges } = processFamilyData(mockFamilyData);
+        const { nodes: allNodes, edges: allEdges } = processFamilyData(familyData);
 
         // 2. Identify hidden nodes based on collapsed state
         const hiddenNodeIds = new Set<string>();
@@ -60,12 +64,14 @@ const TreeFlow = () => {
         setStoreNodes(layoutedNodes);
         setStoreEdges(layoutedEdges);
 
-        // Fit view nicely after update
-        window.requestAnimationFrame(() => {
-            fitView({ padding: 0.2 });
-        });
+        // Fit view nicely after update (only if nodes exist)
+        if (layoutedNodes.length > 0) {
+            window.requestAnimationFrame(() => {
+                fitView({ padding: 0.2 });
+            });
+        }
 
-    }, [setFamilyData, setNodes, setEdges, setStoreNodes, setStoreEdges, fitView, collapsedNodes]);
+    }, [familyData, collapsedNodes, setNodes, setEdges, setStoreNodes, setStoreEdges, fitView]);
 
     // const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     //     setSelectedMember(node.id);
@@ -73,7 +79,7 @@ const TreeFlow = () => {
 
     return (
         <div className="w-full h-screen bg-[#f8f9fa] text-slate-900 flex flex-col overflow-hidden">
-            <Header />
+
 
             <div className="flex-1 relative">
                 <ReactFlow
@@ -93,15 +99,13 @@ const TreeFlow = () => {
                 </ReactFlow>
 
                 <MemberDetailPanel />
+                <AddRelationshipModal />
+                <AddMemberModal />
             </div>
         </div>
     );
 };
 
 export default function FamilyTree() {
-    return (
-        <ReactFlowProvider>
-            <TreeFlow />
-        </ReactFlowProvider>
-    );
+    return <TreeFlow />;
 }
