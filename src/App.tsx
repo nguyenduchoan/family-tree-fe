@@ -10,6 +10,8 @@ import { ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Header from './components/UI/Header';
 
+import { MainLayout } from './components/Layout/MainLayout';
+
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isAuthChecked } = useStore();
@@ -17,7 +19,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!isAuthChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -30,9 +32,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Main App Layout Logic
-const MainLayout = () => {
-  const { currentFamily } = useStore();
+// Main App Shell (Header + Family Tree/Selector)
+const AppShell = () => {
+  const currentFamily = useStore((state) => state.currentFamily);
 
   return (
     <ReactFlowProvider>
@@ -59,18 +61,26 @@ function App() {
     <BrowserRouter>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={
+          <MainLayout>
+            <LoginPage />
+          </MainLayout>
+        } />
         <Route path="/oauth2/callback" element={<OAuthCallback />} />
 
         <Route path="/" element={
           <ProtectedRoute>
-            <MainLayout />
+            <MainLayout>
+              <AppShell />
+            </MainLayout>
           </ProtectedRoute>
         } />
 
         <Route path="/join" element={
           <ProtectedRoute>
-            <JoinFamilyPage />
+            <MainLayout>
+              <JoinFamilyPage />
+            </MainLayout>
           </ProtectedRoute>
         } />
       </Routes>

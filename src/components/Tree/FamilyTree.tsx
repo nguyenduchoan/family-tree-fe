@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactFlow, {
     Controls,
     Background,
@@ -16,6 +16,7 @@ import MemberDetailPanel from '../UI/MemberDetailPanel';
 import AddRelationshipModal from '../Member/AddRelationshipModal';
 import AddMemberModal from '../Member/AddMemberModal';
 
+// Define nodeTypes OUTSIDE the component to prevent re-creation on every render
 const nodeTypes = {
     familyMember: FamilyNode,
 };
@@ -24,7 +25,11 @@ const TreeFlow = () => {
     const { setNodes: setStoreNodes, setEdges: setStoreEdges, familyData, collapsedNodes, currentFamily, fetchMembers } = useStore();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const { fitView } = useReactFlow();
+    const { fitView, setCenter } = useReactFlow();
+
+    // State to track if React Flow instance is initialized and ready
+    const [isTreeReady, setIsTreeReady] = useState(false);
+    const initialFocus = useRef(false);
 
     // Initialize Data & Handle Collapse
     useEffect(() => {
@@ -32,6 +37,11 @@ const TreeFlow = () => {
             fetchMembers(currentFamily.id).catch(console.error);
         }
     }, [currentFamily, familyData.length, fetchMembers]);
+
+    // Reset initial focus state when switching families
+    useEffect(() => {
+        initialFocus.current = false;
+    }, [currentFamily]);
 
     // Update Layout whenever familyData or collapsedNodes change
     useEffect(() => {
@@ -65,22 +75,39 @@ const TreeFlow = () => {
         setStoreEdges(layoutedEdges);
 
         // Fit view nicely after update (only if nodes exist)
-        if (layoutedNodes.length > 0) {
+        // Focus on Root Node (Top most node) - ONLY ON INITIAL LOAD
+        // Wait for React Flow to be fully initialized (isTreeReady) before attempting focus
+        // This ensures the DOM nodes are mounted and can be manipulated by setCenter
+        if (layoutedNodes.length > 0 && !initialFocus.current && isTreeReady) {
+            initialFocus.current = true; // Mark as processed immediately to avoid double firing
+
+            // Use requestAnimationFrame to ensure nodes are painted in the browser
             window.requestAnimationFrame(() => {
-                fitView({ padding: 0.2 });
+                // Find Top Node (min Y)
+                let rootNode = layoutedNodes[0];
+                layoutedNodes.forEach(n => {
+                    if (n.position.y < rootNode.position.y) {
+                        rootNode = n;
+                    }
+                });
+
+                const partnersCount = rootNode.data?.partners?.length || 0;
+                // Width calculation matching layout.ts: 250 * (1 + partners)
+                const width = 250 * (1 + partnersCount);
+                const height = 180; // Approximate height of node
+
+                const centerX = rootNode.position.x + width / 2;
+                const centerY = rootNode.position.y + height / 2;
+
+                // Center on the root node with reasonable zoom
+                setCenter(centerX, centerY, { zoom: 0.8, duration: 1000 });
             });
         }
 
-    }, [familyData, collapsedNodes, setNodes, setEdges, setStoreNodes, setStoreEdges, fitView]);
-
-    // const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
-    //     setSelectedMember(node.id);
-    // }, [setSelectedMember]);
+    }, [familyData, collapsedNodes, setNodes, setEdges, setStoreNodes, setStoreEdges, fitView, setCenter, isTreeReady]);
 
     return (
         <div className="w-full h-screen bg-[#f8f9fa] text-slate-900 flex flex-col overflow-hidden">
-
-
             <div className="flex-1 relative">
                 <ReactFlow
                     nodes={nodes}
@@ -88,8 +115,8 @@ const TreeFlow = () => {
                     onNodesChange={onNodesChange}
                     onEdgesChange={onEdgesChange}
                     nodeTypes={nodeTypes}
+                    onInit={() => setIsTreeReady(true)}
                     // onNodeClick handled internally by FamilyNode
-                    fitView
                     minZoom={0.2}
                     maxZoom={2}
                     className="bg-tree-pattern bg-cover" // Example class if we add pattern

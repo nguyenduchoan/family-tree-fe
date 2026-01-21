@@ -21,6 +21,16 @@ export const getDescendants = (nodeId: string, edges: Edge[]): string[] => {
     return Array.from(descendants);
 };
 
+// Palette for distinguishing multiple partners' lineages
+const PARTNER_COLORS = [
+    '#db2777', // Pink-600
+    '#7c3aed', // Violet-600
+    '#2563eb', // Blue-600
+    '#059669', // Emerald-600
+    '#d97706', // Amber-600
+    '#dc2626', // Red-600
+];
+
 export const processFamilyData = (members: FamilyMember[]) => {
     const nodes: Node<FamilyNodeData>[] = [];
     const edges: Edge[] = [];
@@ -32,49 +42,43 @@ export const processFamilyData = (members: FamilyMember[]) => {
     const processedIds = new Set<string>();
     const memberToNodeId = new Map<string, string>();
 
-    // 1. Create Nodes (grouping couples)
+    // 1. Create Nodes (grouping couples/partners)
     members.forEach(member => {
         if (processedIds.has(member.id)) return;
 
-        // Check if member has a spouse that is processed?
-        // Actually, we should check if they are "main" or "secondary" in grouping.
-        // Simple logic: If has spouse, check if spouse processed. If yes, skip (already merged).
-        // If not, merge them.
+        // Collect all valid partners who haven't been processed yet
+        // This handles "One Husband, Multiple Wives" by grouping them into the Husband's node
+        const partners = member.spouses
+            .map(id => memberMap.get(id))
+            .filter((p): p is FamilyMember => !!p && !processedIds.has(p.id));
 
-        // Find partner (first spouse for simplicity in this logic)
-        const partnerId = member.spouses[0];
-        const partner = partnerId ? memberMap.get(partnerId) : undefined;
+        const nodeId = partners.length > 0
+            ? `group-${member.id}-${partners.map(p => p.id).join('-')}`
+            : member.id;
 
-        if (partner && processedIds.has(partnerId)) {
-            // Already processed as part of partner's node
-            return;
-        }
-
-        const nodeId = partner ? `couple-${member.id}-${partner.id}` : member.id;
-
-        // Mark both as processed
+        // Mark all as processed
         processedIds.add(member.id);
-        if (partner) processedIds.add(partner.id);
+        partners.forEach(p => processedIds.add(p.id));
 
         // Map member IDs to this new Node ID
         memberToNodeId.set(member.id, nodeId);
-        if (partner) memberToNodeId.set(partner.id, nodeId);
+        partners.forEach(p => memberToNodeId.set(p.id, nodeId));
 
-        // Collect merged children
-        // We assume children lists are consistent, but let's merge unique IDs just in case.
+        // Collect merged children from all involved members
         const childrenSet = new Set([...member.children]);
-        if (partner) {
-            partner.children.forEach(c => childrenSet.add(c));
-        }
+        partners.forEach(p => p.children.forEach(c => childrenSet.add(c)));
+
+        // Create Label
+        const label = [member.name, ...partners.map(p => p.name)].join(' & ');
 
         nodes.push({
             id: nodeId,
             type: 'familyMember',
             data: {
                 primary: member,
-                partner: partner,
+                partners: partners,
                 children: Array.from(childrenSet),
-                label: member.name + (partner ? ` & ${partner.name}` : ''),
+                label: label,
             },
             position: { x: 0, y: 0 },
         });
@@ -97,14 +101,41 @@ export const processFamilyData = (members: FamilyMember[]) => {
                 // But wait, if multiple parents point to same child, we grouped parents.
                 // So 'node' is the parent group. 'childNodeId' is the child group.
 
+                // Determine Source Handle based on biological parents
+                // ONLY use specific handles if multiple partners exist (Husband + 2 or more Wives)
+                // If standard couple (Husband + 1 Wife), keep sourceHandle undefined to use shared center (default)
+                let sourceHandle = undefined;
+                let strokeColor = '#334155'; // Default Slate-700
+                const DEFAULT_STROKE_WIDTH = 1.5;
+                let strokeWidth = DEFAULT_STROKE_WIDTH;
+
+                if (node.data.partners.length > 1) {
+                    sourceHandle = `handle-${node.data.primary.id}`; // Default to primary specific handle
+
+                    const child = memberMap.get(childId);
+                    if (child && child.parents) {
+                        // Check if child has a parent in the partners list
+                        const partnerIndex = node.data.partners.findIndex(p => child.parents.includes(p.id));
+                        if (partnerIndex !== -1) {
+                            const partnerParent = node.data.partners[partnerIndex];
+                            sourceHandle = `handle-${partnerParent.id}`;
+
+                            // Assign distinct color based on partner order
+                            strokeColor = PARTNER_COLORS[partnerIndex % PARTNER_COLORS.length];
+                            strokeWidth = 2; // Make these lines slightly thicker
+                        }
+                    }
+                }
+
                 if (!edges.some(e => e.id === edgeId)) {
                     edges.push({
                         id: edgeId,
                         source: node.id,
                         target: childNodeId,
+                        sourceHandle: sourceHandle,
                         type: 'smoothstep',
                         animated: true,
-                        style: { stroke: '#cbd5e1', strokeWidth: 2 },
+                        style: { stroke: strokeColor, strokeWidth: strokeWidth },
                     });
                 }
             }

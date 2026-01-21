@@ -48,6 +48,7 @@ interface TreeState {
     updateMember: (familyId: string, memberId: string, data: any) => Promise<void>;
     deleteMember: (familyId: string, memberId: string) => Promise<void>;
     removeRelationship: (familyId: string, member1Id: string, member2Id: string) => Promise<void>;
+    addRelationship: (familyId: string, fromMemberId: string, toMemberId: string, type: 'SPOUSE' | 'PARENT_CHILD') => Promise<void>;
 
     // Family Member Management (Users)
     familyMembers: FamilyMemberUser[];

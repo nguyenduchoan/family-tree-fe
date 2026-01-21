@@ -56,7 +56,7 @@ export interface CreateMemberRequest {
 
 export interface FamilyNodeData {
     primary: FamilyMember;
-    partner?: FamilyMember;
+    partners: FamilyMember[];
     children: string[];
     label: string;
 }

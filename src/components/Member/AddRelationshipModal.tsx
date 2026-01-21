@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { X } from 'lucide-react';
-import { type FamilyMember } from '../../types';
+
 
 export default function AddRelationshipModal() {
     const {
@@ -29,9 +29,13 @@ export default function AddRelationshipModal() {
 
     if (!isOpen || !currentMember || !currentFamily) return null;
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     // Filter out current member and existing relationships to avoid duplicates (basic filtering)
     // For now, just filter out self.
-    const availableMembers = familyData.filter(m => m.id !== currentMember.id);
+    const availableMembers = familyData
+        .filter(m => m.id !== currentMember.id)
+        .filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,6 +46,7 @@ export default function AddRelationshipModal() {
             await addRelationship(currentFamily.id, currentMember.id, targetMemberId, relationshipType);
             closeAddRelationshipModal();
             setTargetMemberId('');
+            setSearchTerm('');
         } catch (error) {
             console.error('Failed to add relationship:', error);
             alert('Failed to add relationship');
@@ -85,19 +90,33 @@ export default function AddRelationshipModal() {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Chọn thành viên</label>
+
+                        {/* Search Input */}
+                        <div className="relative mb-2">
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm tên..."
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+
                         <select
                             required
                             className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                             value={targetMemberId}
                             onChange={e => setTargetMemberId(e.target.value)}
+                            size={5} // Show multiple items to make it easier to see search results
                         >
-                            <option value="">-- Chọn thành viên --</option>
+                            <option value="" disabled>-- Kết quả tìm kiếm ({availableMembers.length}) --</option>
                             {availableMembers.map(member => (
                                 <option key={member.id} value={member.id}>
                                     {member.name} ({member.gender === 'MALE' ? 'Nam' : 'Nữ'}, {member.birthDate || '?'})
                                 </option>
                             ))}
                         </select>
+                        <p className="text-xs text-slate-400 mt-1">* Nhập tên để lọc danh sách bên dưới</p>
                     </div>
 
                     <div className="pt-2 flex justify-end gap-3">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../../store/useStore';
-import { X, Shield, Slash, Trash2, LogOut } from 'lucide-react';
+import { X, Trash2, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface MemberManagementModalProps {
@@ -109,8 +109,8 @@ const MemberManagementModal: React.FC<MemberManagementModalProps> = ({ isOpen, o
                                     </select>
                                 ) : (
                                     <span className={`text-xs font-medium px-2 py-1 rounded-full ${member.role === 'OWNER' ? 'bg-purple-100 text-purple-700' :
-                                            member.role === 'EDITOR' ? 'bg-emerald-100 text-emerald-700' :
-                                                'bg-slate-200 text-slate-600'
+                                        member.role === 'EDITOR' ? 'bg-emerald-100 text-emerald-700' :
+                                            'bg-slate-200 text-slate-600'
                                         }`}>
                                         {member.role}
                                     </span>

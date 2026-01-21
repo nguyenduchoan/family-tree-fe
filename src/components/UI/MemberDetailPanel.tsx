@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Tag, Baby, Heart } from 'lucide-react';
+import { X, User, Tag } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import clsx from 'clsx';
 import EditMemberModal from '../Member/EditMemberModal';
@@ -116,8 +116,7 @@ const PanelContent = ({
     onEdit,
     onAddRelation,
     onClaim,
-    spouseNames,
-    childrenNames,
+    // spouseNames, childrenNames removed
     familyData,
     setSelectedMember,
     isCurrentUser,

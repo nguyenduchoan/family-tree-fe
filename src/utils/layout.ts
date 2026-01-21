@@ -11,10 +11,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
     dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 100 });
 
     nodes.forEach((node) => {
-        // Calculate dynamic width: Single (~220px) vs Couple (~450px)
-        // Adding some buffer for spacing
-        const isCouple = !!node.data?.partner;
-        const width = isCouple ? 500 : 250;
+        const partnersCount = node.data?.partners?.length || 0;
+        const width = 250 * (1 + partnersCount);
         const height = nodeHeight;
 
         dagreGraph.setNode(node.id, { width, height });
@@ -31,8 +29,8 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
 
         // We need to use the SAME width we told dagre, or recalculate it to center correctness.
         // Dagre gives center x,y. ReactFlow needs top-left x,y.
-        const isCouple = !!node.data?.partner;
-        const width = isCouple ? 500 : 250;
+        const partnersCount = node.data?.partners?.length || 0;
+        const width = 250 * (1 + partnersCount);
 
         node.targetPosition = isHorizontal ? Position.Left : Position.Top;
         node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;

@@ -11,14 +11,19 @@ interface EditMemberModalProps {
 }
 
 export default function EditMemberModal({ isOpen, onClose, member, familyId }: EditMemberModalProps) {
-    const { updateMember, deleteMember, removeRelationship, familyData, setSelectedMember } = useStore();
+    const { updateMember, deleteMember, removeRelationship, familyData } = useStore();
     const [formData, setFormData] = useState({
         name: '',
         gender: 'MALE' as 'MALE' | 'FEMALE',
         birthDate: '',
         deathDate: '',
         bio: '',
-        avatar: ''
+        avatar: '',
+        phone: '',
+        email: '',
+        address: '',
+        facebook: '',
+        twitter: ''
     });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -54,12 +59,6 @@ export default function EditMemberModal({ isOpen, onClose, member, familyId }: E
         } finally {
             setIsLoading(false);
         }
-    };
-
-    // Helper to navigate
-    const handleSelectRelative = (id: string) => {
-        setSelectedMember(id);
-        onClose(); // Close edit modal to show the detail panel of the selected person
     };
 
     return (

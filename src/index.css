@@ -3,24 +3,75 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-background text-slate-900;
-  }
-}
+  :root {
+    /* Colors - Premium Light Mode (RGB triplets for opacity support) */
+    --color-background: 248 250 252;
+    /* #F8FAFC */
+    --color-surface: 255 255 255;
+    /* #FFFFFF */
+    --color-primary: 5 150 105;
+    /* #059669 Emerald 600 */
+    --color-secondary: 100 116 139;
+    /* #64748b Slate 500 */
+    --color-accent: 217 119 6;
+    /* #D97706 Amber 600 */
+    --color-muted: 148 163 184;
+    /* #94a3b8 */
+    --color-border: 226 232 240;
+    /* #e2e8f0 */
+    --color-text-main: 15 23 42;
+    /* #0f172a */
+    --color-text-muted: 100 116 139;
+    /* #64748b */
 
-.react-flow__node {
-  @apply shadow-sm border border-slate-200 rounded-lg bg-white;
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+
+  body {
+    @apply bg-background text-slate-900 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
 }
 
 @layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-lg;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-slate-100 shadow-sm transition-all duration-300;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
   .bg-tree-pattern {
     background-image:
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4)),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)),
       url('https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=2544&auto=format&fit=crop');
-    /* Fallback or nice texture of trees/leaves */
+    background-size: cover;
+    background-attachment: fixed;
   }
 }
 
+/* React Flow Customization */
+.react-flow__node {
+  @apply shadow-md border-0 rounded-xl bg-white transition-shadow duration-300;
+}
+
+.react-flow__node:hover {
+  @apply shadow-xl ring-2 ring-primary/20;
+}
+
 .react-flow__handle {
-  @apply bg-slate-400 w-2 h-2;
+  @apply bg-slate-400 w-2 h-2 transition-transform duration-200;
+}
+
+.react-flow__handle:hover {
+  @apply transform scale-150 bg-primary;
 }

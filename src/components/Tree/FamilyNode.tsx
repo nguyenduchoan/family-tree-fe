@@ -5,7 +5,7 @@ import clsx from 'clsx';
 import { User, Plus, Minus, UserPlus } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
-const MemberCard = ({ member }: { member: any, isPrimary?: boolean }) => {
+const MemberCard = ({ member, isPrimary, sourceHandleId }: { member: any, isPrimary?: boolean, sourceHandleId?: string }) => {
     const { setSelectedMember } = useStore();
 
     if (!member) return null;
@@ -17,7 +17,7 @@ const MemberCard = ({ member }: { member: any, isPrimary?: boolean }) => {
                 setSelectedMember(member.id);
             }}
             className={clsx(
-                "flex items-center gap-3 p-3 min-w-[200px] cursor-pointer hover:bg-slate-50 transition-colors",
+                "flex items-center gap-3 p-3 min-w-[200px] cursor-pointer hover:bg-slate-50 transition-colors relative",
             )}>
             <div className="relative shrink-0">
                 {member.avatar ? (
@@ -48,6 +48,16 @@ const MemberCard = ({ member }: { member: any, isPrimary?: boolean }) => {
                 "w-1.5 h-1.5 rounded-full shrink-0",
                 member.gender === 'MALE' ? "bg-blue-400" : "bg-pink-400"
             )} />
+
+            {/* Source Handle for this specific member */}
+            {sourceHandleId && (
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    id={sourceHandleId}
+                    className="!bg-tree-line !w-3 !h-3 !bottom-[-2px] opacity-0"
+                />
+            )}
         </div>
     )
 }
@@ -57,6 +67,7 @@ const FamilyNode = ({ id, data, selected }: NodeProps<FamilyNodeData>) => {
     const isCollapsed = collapsedNodes.includes(id);
     const hasChildren = data.children && data.children.length > 0;
     const isCurrentUser = data.primary.id === currentUserMemberId;
+    const hasMultipleSpouses = data.partners && data.partners.length > 1;
 
     // Helper to calculate total descendants recursively
     const countDescendants = (memberIds: string[]): number => {
@@ -109,12 +120,20 @@ const FamilyNode = ({ id, data, selected }: NodeProps<FamilyNodeData>) => {
                 )}
 
                 {/* Primary Member */}
-                <MemberCard member={data.primary} />
+                <MemberCard
+                    member={data.primary}
+                    isPrimary
+                    sourceHandleId={hasMultipleSpouses ? `handle-${data.primary.id}` : undefined}
+                />
 
-                {/* Partner Member */}
-                {data.partner && (
-                    <MemberCard member={data.partner} />
-                )}
+                {/* Partners List */}
+                {data.partners && data.partners.map((partner) => (
+                    <MemberCard
+                        key={partner.id}
+                        member={partner}
+                        sourceHandleId={hasMultipleSpouses ? `handle-${partner.id}` : undefined}
+                    />
+                ))}
             </div>
 
             {/* Stats Footer (Only if there are descendants) */}
@@ -131,7 +150,14 @@ const FamilyNode = ({ id, data, selected }: NodeProps<FamilyNodeData>) => {
                 </div>
             )}
 
-            <Handle type="source" position={Position.Bottom} className="!bg-tree-line !w-3 !h-3 opacity-0" />
+            {/* Global Handle for Single/Couple (Shared Center) */}
+            {!hasMultipleSpouses && (
+                <Handle
+                    type="source"
+                    position={Position.Bottom}
+                    className="!bg-slate-400 !w-3 !h-3 opacity-0"
+                />
+            )}
 
             {/* Toggle Button for Children */}
             {hasChildren && (
