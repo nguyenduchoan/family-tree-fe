@@ -4,7 +4,9 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { FamilyChart } from "@/components/features/family-tree/FamilyChart";
 import { MemberDetailPanel } from "@/components/features/family-tree/MemberDetailPanel";
-import { useState, useEffect } from "react";
+import AddMemberModal from "@/components/features/family/AddMemberModal";
+import EditMemberModal from "@/components/features/family/EditMemberModal";
+import { useEffect, useState } from "react";
 import { FamilyMember } from "@/types";
 import { useStore } from "@/store/useStore";
 import { useRouter } from "next/navigation";
@@ -19,8 +21,6 @@ export default function FamilyTreePage() {
     } = useStore();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(null);
-    const [isPanelOpen, setIsPanelOpen] = useState(false);
 
     useEffect(() => {
         const init = async () => {
@@ -59,14 +59,6 @@ export default function FamilyTreePage() {
         loadData();
     }, [currentFamily, fetchMembers, fetchCurrentUserMemberId, familyData.length]);
 
-    const handleMemberClick = (member: FamilyMember) => {
-        setSelectedMember(member);
-        setIsPanelOpen(true);
-    };
-
-    const handleClosePanel = () => {
-        setIsPanelOpen(false);
-    };
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -85,9 +77,14 @@ export default function FamilyTreePage() {
                 <div className="flex-1 border-t border-gray-200 bg-gray-50/50 relative overflow-hidden">
                     {/* Ensure container limits size for ReactFlow */}
                     {currentFamily ? (
-                        <div className="absolute inset-0">
-                            <FamilyChart onMemberClick={handleMemberClick} />
-                        </div>
+                        <>
+                            <div className="absolute inset-0">
+                                <FamilyChart onMemberClick={() => { }} />
+                            </div>
+                            <AddMemberModal />
+                            <EditMemberModal />
+                            <MemberDetailPanel />
+                        </>
                     ) : (
                         <div className="flex items-center justify-center h-full">
                             <div className="text-gray-400">Vui lòng chọn gia phả để xem...</div>
@@ -95,12 +92,6 @@ export default function FamilyTreePage() {
                     )}
                 </div>
             </main>
-
-            <MemberDetailPanel
-                member={selectedMember}
-                isOpen={isPanelOpen}
-                onClose={handleClosePanel}
-            />
 
             <Footer />
         </div>

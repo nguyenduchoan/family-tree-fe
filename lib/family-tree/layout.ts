@@ -10,14 +10,15 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
     const isHorizontal = direction === 'LR';
     dagreGraph.setGraph({
         rankdir: direction,
-        nodesep: 100, // Increased horizontal separation
-        ranksep: 200, // Increased vertical separation significantly to prevent "wavy" look
-        ranker: 'longest-path' // Use longest-path for better tree structure
+        nodesep: 50,
+        ranksep: 400, // Maximized vertical spacing (400) to allow clean smoothstep turns
+        ranker: 'network-simplex' // Network simplex usually minimizes edge length better
     });
 
+    // 1. Setup Dagre Graph
     nodes.forEach((node) => {
         const partnersCount = node.data?.partners?.length || 0;
-        const width = 260 * (1 + partnersCount); // Slightly wider
+        const width = 260 * (1 + partnersCount);
         const height = nodeHeight;
 
         dagreGraph.setNode(node.id, { width, height });
@@ -27,18 +28,18 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
         dagreGraph.setEdge(edge.source, edge.target);
     });
 
+    // 2. Run Dagre
     dagre.layout(dagreGraph);
 
-    // Group nodes by Y level to enforce strict alignment
+    // 3. Snap Y positions to grid (Strict Alignment)
     const yLevels: Record<number, number[]> = {};
 
-    // First pass: Collect all Y positions
     nodes.forEach((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
         const y = nodeWithPosition.y;
 
-        // Find existing level within tolerance (e.g., 10px)
-        const foundLevel = Object.keys(yLevels).find(key => Math.abs(parseFloat(key) - y) < 10);
+        // Group Ys within tolerance
+        const foundLevel = Object.keys(yLevels).find(key => Math.abs(parseFloat(key) - y) < 50);
 
         if (foundLevel) {
             yLevels[parseFloat(foundLevel)].push(y);
@@ -47,36 +48,43 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'T
         }
     });
 
-    // Calculate strictly aligned Y for each level (average)
     const alignedYs: Record<number, number> = {};
-    Object.keys(yLevels).forEach(key => {
-        const levelY = parseFloat(key);
-        // Just use the levelY directly as the "snap" target, or average them.
-        // Since Dagre usually outputs identical Ys, this is just a safeguard.
-        // We map the original roughly-equal Ys to this single canonical Y.
+    const sortedLevels = Object.keys(yLevels).map(Number).sort((a, b) => a - b);
+
+    // Force specific generation distance
+    const LEVEL_HEIGHT = 600; // Explicit large step
+
+    sortedLevels.forEach((levelY, index) => {
+        // Option A: Use index * LEVEL_HEIGHT (Strict BFS-style forcing)
+        // Option B: Use layout Y but snapped.
+        // User wants "Child same height". Layout Y usually gives this. 
+        // Let's stick to SNAP, but spacing logic:
+        // alignedYs[levelY] = index * LEVEL_HEIGHT + (nodeHeight / 2); // FORCE strict generations
+
+        // Actually, forcing strict generations by Index is safer if Dagre is correct about rank.
+        // But Dagre might skip ranks? 
+        // Be safe: Use the Snapped Y, but ensure minimum delta?
+        // Let's use the Snapped Y as Canonical, but apply a multiplier if needed? 
+        // No, let's just trust Dagre's Rank Separation (ranksep=400) which should naturally space them.
         alignedYs[levelY] = levelY;
     });
 
     const layoutedNodes = nodes.map((node) => {
         const nodeWithPosition = dagreGraph.node(node.id);
 
-        // Find which level this node belongs to
         let snapY = nodeWithPosition.y;
-        const foundLevel = Object.keys(alignedYs).find(key => Math.abs(parseFloat(key) - nodeWithPosition.y) < 10);
+        const foundLevel = Object.keys(alignedYs).find(key => Math.abs(parseFloat(key) - nodeWithPosition.y) < 50);
         if (foundLevel) {
             snapY = alignedYs[parseFloat(foundLevel)];
         }
 
-        // We need to use the SAME width we told dagre, or recalculate it to center correctness.
-        // Dagre gives center x,y. ReactFlow needs top-left x,y.
         const partnersCount = node.data?.partners?.length || 0;
+        // Use consistent width as per GlassFamilyNode assumption
         const width = 260 * (1 + partnersCount);
 
         node.targetPosition = isHorizontal ? Position.Left : Position.Top;
         node.sourcePosition = isHorizontal ? Position.Right : Position.Bottom;
 
-        // We are shifting the dagre node position (anchor=center center) to the top left
-        // so it matches the React Flow node anchor point (top left).
         node.position = {
             x: nodeWithPosition.x - width / 2,
             y: snapY - nodeHeight / 2,

@@ -26,6 +26,11 @@ interface TreeState {
         relationType: 'SPOUSE' | 'PARENT_CHILD' | null;
     };
 
+    editMemberModal: {
+        isOpen: boolean;
+        memberId: string | null;
+    };
+
     // Tree Data
     nodes: Node[];
     edges: Edge[];
@@ -67,6 +72,9 @@ interface TreeState {
 
     openAddMemberModal: (relatedMemberId?: string, relationType?: 'SPOUSE' | 'PARENT_CHILD') => void;
     closeAddMemberModal: () => void;
+
+    openEditMemberModal: (memberId: string) => void;
+    closeEditMemberModal: () => void;
 
     // User Linking
     currentUserMemberId: string | null;
@@ -392,6 +400,27 @@ export const useStore = create<TreeState>((set, get) => ({
             relationType: null
         }
     }),
+
+
+    openEditMemberModal: (memberId) => {
+        set({
+            editMemberModal: {
+                isOpen: true,
+                memberId
+            }
+        });
+    },
+    closeEditMemberModal: () => set({
+        editMemberModal: {
+            isOpen: false,
+            memberId: null
+        }
+    }),
+    editMemberModal: {
+        isOpen: false,
+        memberId: null
+    },
+
 
     currentUserMemberId: null,
     fetchCurrentUserMemberId: async (familyId: string) => {

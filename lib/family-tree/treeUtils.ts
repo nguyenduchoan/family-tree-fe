@@ -7,48 +7,60 @@ const findPrimaryPartner = (member: FamilyMember, allMembers: FamilyMember[]) =>
     return allMembers.find(m => m.id === member.spouses[0]);
 };
 
+const PARTNER_COLORS = [
+    '#db2777', // Pink-600
+    '#7c3aed', // Violet-600
+    '#2563eb', // Blue-600
+    '#059669', // Emerald-600
+    '#d97706', // Amber-600
+    '#dc2626', // Red-600
+];
+
 export const buildFamilyGraph = (members: FamilyMember[], rootId?: string) => {
     const nodes: Node<FamilyNodeData>[] = [];
     const edges: Edge[] = [];
 
     if (!members || members.length === 0) return { nodes, edges };
 
-    // Set of processed members to avoid duplicates
-    const processedMap = new Set<string>();
+    const memberMap = new Map<string, FamilyMember>();
+    members.forEach(m => memberMap.set(m.id, m));
 
+    // Track processed IDs so we don't create duplicates for partners
+    const processedIds = new Set<string>();
+    const memberToNodeId = new Map<string, string>();
+
+    // 1. Create Nodes (grouping couples/partners)
     members.forEach(member => {
-        if (processedMap.has(member.id)) return;
+        if (processedIds.has(member.id)) return;
 
-        // Skip if this member is a "secondary" partner (already handled by their spouse)
-        // logic: if they are spouse of someone who has smaller ID? or logic based on "Bloodline"?
-        // For simplicity: We create a node for every "Couple" or "Single".
+        // Collect all valid partners who haven't been processed yet
+        const partners = (member.spouses || [])
+            .map(id => memberMap.get(id))
+            .filter((p): p is FamilyMember => !!p && !processedIds.has(p.id));
 
-        // Check if we already processed this person as a partner of someone else?
-        // Actually, let's iterate and build "FamilyUnit" nodes.
-
-        const partners = (member.spouses || []).map(sId => members.find(m => m.id === sId)).filter(Boolean) as FamilyMember[];
-
-        // Rule: Identify the "Main" node for the couple.
-        // We handle the node when we encounter the "Primary" person.
-        // If A and B are married. We only create one Node { primary: A, partners: [B] }.
-        // How to determine who is A? reliable way: ID string comparison or "Bloodline" flag if existed.
-        // Fallback: Process if !processedMap.has(partner.id)
-
-        let shouldProcess = true;
-        for (const p of partners) {
-            if (processedMap.has(p.id)) {
-                shouldProcess = false; // Already processed as part of that partner's node
-                break;
-            }
-        }
-
-        if (!shouldProcess) return;
-
-        // Mark self and partners as processed
-        processedMap.add(member.id);
-        partners.forEach(p => processedMap.add(p.id));
-
+        // Create a composite ID for the node if there are partners, to ensure uniqueness and stability
+        // Or simply use the primary member's ID if that's sufficient for your app's logic
+        // fe-new used composite: `group-${member.id}-${partners...}`
+        // Let's stick to member.id for simplicity if it works, BUT fe-new logic suggests composite might be better for "Couple" identity.
+        // However, standardizing on Primary Member ID as Node ID is often easier for updates (CRUD).
+        // Let's try to keep Primary ID as Node ID for now to minimize refactors elsewhere (e.g. onMemberClick).
+        // Update: fe-new uses composite. If we change it, we must ensure edges find it.
         const nodeId = member.id;
+
+        // Mark all as processed
+        processedIds.add(member.id);
+        partners.forEach(p => processedIds.add(p.id));
+
+        // Map member IDs to this new Node ID
+        memberToNodeId.set(member.id, nodeId);
+        partners.forEach(p => memberToNodeId.set(p.id, nodeId));
+
+        // Collect merged children from all involved members
+        const childrenSet = new Set([...(member.children || [])]);
+        partners.forEach(p => (p.children || []).forEach(c => childrenSet.add(c)));
+
+        // Create Label
+        const label = [member.name, ...partners.map(p => p.name)].join(' & ');
 
         nodes.push({
             id: nodeId,
@@ -56,27 +68,68 @@ export const buildFamilyGraph = (members: FamilyMember[], rootId?: string) => {
             data: {
                 primary: member,
                 partners: partners,
-                children: member.children,
-                label: member.name
+                children: Array.from(childrenSet),
+                label: label,
             },
-            position: { x: 0, y: 0 }, // Will be set by Layout
+            position: { x: 0, y: 0 },
         });
+    });
 
-        // Create Edges to Children
-        // We only create edges from the "Couple Node" to the "Child Node".
-        // The child node's ID will be the child's primary ID.
+    // 2. Create Edges
+    nodes.forEach(node => {
+        const { children } = node.data;
 
-        if (member.children) {
-            member.children.forEach(childId => {
-                edges.push({
-                    id: `e-${nodeId}-${childId}`,
-                    source: nodeId,
-                    target: childId,
-                    type: 'smoothstep',
-                    className: '!stroke-gray-400 !stroke-2',
-                });
-            });
-        }
+        children.forEach((childId: string) => {
+            const childNodeId = memberToNodeId.get(childId);
+            if (childNodeId) {
+                const edgeId = `e-${node.id}-${childNodeId}`;
+
+                // Determine Source Handle based on biological parents
+                let sourceHandle: string | undefined = undefined;
+                let strokeColor = '#334155'; // Default Slate-700
+                let strokeWidth = 1.5;
+
+                // Only perform complex handle matching if there are multiple partners (complex family unit)
+                if (node.data.partners.length > 0) {
+                    // Default to Primary's handle (shared center usually, unless we have specific handle logic)
+                    // If GlassFamilyNode expects handles for everyone when > 0 partners:
+                    // Check GlassFamilyNode logic: 
+                    //   sourceHandleId={hasMultipleSpouses ? `handle-${data.primary.id}` : undefined}
+                    // So if partners > 1 (hasMultipleSpouses), we MUST provide a handle ID.
+
+                    const hasMultipleSpouses = node.data.partners.length > 1;
+
+                    if (hasMultipleSpouses) {
+                        sourceHandle = `handle-${node.data.primary.id}`; // Default to primary
+
+                        const child = memberMap.get(childId);
+                        if (child && child.parents) {
+                            // Check if child belongs to one of the partners
+                            const partnerIndex = node.data.partners.findIndex(p => child.parents?.includes(p.id));
+                            if (partnerIndex !== -1) {
+                                const partnerParent = node.data.partners[partnerIndex];
+                                sourceHandle = `handle-${partnerParent.id}`;
+                                strokeColor = PARTNER_COLORS[partnerIndex % PARTNER_COLORS.length];
+                                strokeWidth = 2;
+                            }
+                        }
+                    }
+                }
+
+                if (!edges.some(e => e.id === edgeId)) {
+                    edges.push({
+                        id: edgeId,
+                        source: node.id,
+                        target: childNodeId,
+                        sourceHandle: sourceHandle,
+                        type: 'smoothstep', // Reverted to smoothstep for orthogonal "square" lines
+                        animated: true,
+                        style: { stroke: strokeColor, strokeWidth: strokeWidth },
+                        // className: '!stroke-gray-400 !stroke-2', // Removed valid css class to use style instead for dynamic colors
+                    });
+                }
+            }
+        });
     });
 
     return { nodes, edges };
