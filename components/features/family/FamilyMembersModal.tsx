@@ -64,13 +64,13 @@ export default function FamilyMembersModal({ isOpen, onClose }: FamilyMembersMod
                         <div className="flex-1 overflow-y-auto p-2">
                             <div className="space-y-1">
                                 {familyMembers.map((member) => (
-                                    <div key={member.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group">
+                                    <div key={member.userId} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center text-slate-500 font-bold uppercase">
-                                                {member.username?.[0] || <User size={18} />}
+                                                {member.name?.[0] || <User size={18} />}
                                             </div>
                                             <div>
-                                                <div className="font-bold text-gray-800 text-sm">{member.username}</div>
+                                                <div className="font-bold text-gray-800 text-sm">{member.name}</div>
                                                 <div className="text-xs text-gray-400">{member.email}</div>
                                             </div>
                                         </div>
@@ -84,7 +84,7 @@ export default function FamilyMembersModal({ isOpen, onClose }: FamilyMembersMod
                                                 {member.role === 'OWNER' ? 'Chủ sở hữu' : member.role === 'EDITOR' ? 'Chỉnh sửa' : 'Xem'}
                                             </span>
 
-                                            {isOwner && member.id !== user?.id && (
+                                            {isOwner && member.userId !== user?.id && (
                                                 <DropdownMenu.Root>
                                                     <DropdownMenu.Trigger asChild>
                                                         <button className="p-1.5 text-gray-400 hover:bg-gray-200 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
@@ -94,14 +94,14 @@ export default function FamilyMembersModal({ isOpen, onClose }: FamilyMembersMod
                                                     <DropdownMenu.Portal>
                                                         <DropdownMenu.Content className="bg-white rounded-xl shadow-xl border border-gray-100 p-1 min-w-[150px] z-[110]" align="end">
                                                             <DropdownMenu.Label className="text-[10px] uppercase text-gray-400 font-bold px-2 py-1">Đổi quyền</DropdownMenu.Label>
-                                                            <DropdownMenu.Item onClick={() => handleRoleChange(member.id, 'EDITOR')} className="text-sm px-2 py-1.5 hover:bg-blue-50 text-gray-700 rounded-lg cursor-pointer outline-none">
+                                                            <DropdownMenu.Item onClick={() => handleRoleChange(member.userId, 'EDITOR')} className="text-sm px-2 py-1.5 hover:bg-blue-50 text-gray-700 rounded-lg cursor-pointer outline-none">
                                                                 Cấp quyền Sửa
                                                             </DropdownMenu.Item>
-                                                            <DropdownMenu.Item onClick={() => handleRoleChange(member.id, 'VIEWER')} className="text-sm px-2 py-1.5 hover:bg-gray-50 text-gray-700 rounded-lg cursor-pointer outline-none">
+                                                            <DropdownMenu.Item onClick={() => handleRoleChange(member.userId, 'VIEWER')} className="text-sm px-2 py-1.5 hover:bg-gray-50 text-gray-700 rounded-lg cursor-pointer outline-none">
                                                                 Cấp quyền Xem
                                                             </DropdownMenu.Item>
                                                             <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
-                                                            <DropdownMenu.Item onClick={() => handleRemove(member.id)} className="text-sm px-2 py-1.5 hover:bg-red-50 text-red-600 rounded-lg cursor-pointer outline-none flex items-center gap-2">
+                                                            <DropdownMenu.Item onClick={() => handleRemove(member.userId)} className="text-sm px-2 py-1.5 hover:bg-red-50 text-red-600 rounded-lg cursor-pointer outline-none flex items-center gap-2">
                                                                 <Trash2 size={14} /> Xóa khỏi gia phả
                                                             </DropdownMenu.Item>
                                                         </DropdownMenu.Content>
