@@ -71,6 +71,7 @@ interface TreeState {
     // Scan/Focus
     focusMemberId: string | null;
     setFocusMember: (id: string | null) => void;
+    expandNodes: (ids: string[]) => void;
 
     openAddRelationshipModal: (memberId: string, type?: 'SPOUSE' | 'PARENT_CHILD') => void;
     closeAddRelationshipModal: () => void;
@@ -535,5 +536,8 @@ export const useStore = create<TreeState>((set, get) => ({
     },
 
     focusMemberId: null,
-    setFocusMember: (id) => set({ focusMemberId: id })
+    setFocusMember: (id) => set({ focusMemberId: id }),
+    expandNodes: (ids) => set((state) => ({
+        collapsedNodes: state.collapsedNodes.filter(nodeId => !ids.includes(nodeId))
+    }))
 }));
