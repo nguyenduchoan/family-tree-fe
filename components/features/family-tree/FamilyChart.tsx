@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -8,7 +8,9 @@ import ReactFlow, {
     useEdgesState,
     ConnectionLineType,
     Node,
-    Edge
+    Edge,
+    useReactFlow,
+    ReactFlowProvider
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -30,8 +32,14 @@ interface FamilyChartProps {
     onMemberClick: (member: FamilyMember) => void;
 }
 
-export function FamilyChart({ onMemberClick }: FamilyChartProps) {
+// Inner component containing the logic that uses useReactFlow
+function FamilyChartContent({ onMemberClick }: FamilyChartProps) {
     const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges, familyData, collapsedNodes } = useStore();
+    const { fitView, setCenter } = useReactFlow();
+
+    // State to track if React Flow instance is initialized and ready
+    const [isTreeReady, setIsTreeReady] = useState(false);
+    const initialFocus = useRef(false);
 
     // Local ReactFlow state
     const [nodes, setNodesState, onNodesChange] = useNodesState([]);
@@ -57,7 +65,36 @@ export function FamilyChart({ onMemberClick }: FamilyChartProps) {
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
 
-    }, [familyData, setNodes, setEdges, setNodesState, setEdgesState]);
+        // Focus on Root Node (Top most node) - ONLY ON INITIAL LOAD
+        // Wait for React Flow to be fully initialized (isTreeReady) before attempting focus
+        if (layoutedNodes.length > 0 && !initialFocus.current && isTreeReady) {
+            initialFocus.current = true; // Mark as processed immediately to avoid double firing
+
+            // Use requestAnimationFrame to ensure nodes are painted in the browser
+            window.requestAnimationFrame(() => {
+                // Find Top Node (min Y)
+                let rootNode = layoutedNodes[0];
+                layoutedNodes.forEach(n => {
+                    if (n.position.y < rootNode.position.y) {
+                        rootNode = n;
+                    }
+                });
+
+                const partnersCount = rootNode.data?.partners?.length || 0;
+                // Width calculation matching layout.ts: 260 * (1 + partners)
+                // Height matching nodeHeight: 300
+                const width = 260 * (1 + partnersCount);
+                const height = 300;
+
+                const centerX = rootNode.position.x + width / 2;
+                const centerY = rootNode.position.y + height / 2;
+
+                // Center on the root node with reasonable zoom
+                setCenter(centerX, centerY, { zoom: 0.8, duration: 1000 });
+            });
+        }
+
+    }, [familyData, setNodes, setEdges, setNodesState, setEdgesState, isTreeReady, setCenter]);
 
     return (
         <div className="w-full h-full min-h-[600px] bg-background">
@@ -67,7 +104,8 @@ export function FamilyChart({ onMemberClick }: FamilyChartProps) {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 nodeTypes={nodeTypes}
-                fitView
+                onInit={() => setIsTreeReady(true)}
+                // fitView // Removed default fitView to allow custom focus control
                 className="bg-background"
                 minZoom={0.1}
             >
@@ -75,5 +113,14 @@ export function FamilyChart({ onMemberClick }: FamilyChartProps) {
                 <Controls className="bg-white/80 backdrop-blur-md border border-white/40 shadow-xl rounded-lg overflow-hidden !fill-gray-600 !stroke-gray-600" />
             </ReactFlow>
         </div>
+    );
+}
+
+// Wrapper component to provide the ReactFlow context
+export function FamilyChart(props: FamilyChartProps) {
+    return (
+        <ReactFlowProvider>
+            <FamilyChartContent {...props} />
+        </ReactFlowProvider>
     );
 }

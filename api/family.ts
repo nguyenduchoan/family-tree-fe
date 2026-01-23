@@ -55,5 +55,20 @@ export const familyApi = {
         await client.put(`/families/${familyId}/users/${userId}/role`, null, {
             params: { role }
         });
+    },
+
+    generateShareToken: async (familyId: string) => {
+        const response = await client.post<string>(`/families/${familyId}/share`);
+        return response.data;
+    },
+
+    getFamilyByShareToken: async (token: string) => {
+        const response = await client.get<{ family: Family, members: any[], token: string }>(`/share/${token}`);
+        return response.data;
+    },
+
+    joinFamilyByShareToken: async (token: string) => {
+        const response = await client.post<Family>(`/share/${token}/join`);
+        return response.data;
     }
 };

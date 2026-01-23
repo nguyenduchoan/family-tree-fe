@@ -80,6 +80,9 @@ interface TreeState {
     currentUserMemberId: string | null;
     fetchCurrentUserMemberId: (familyId: string) => Promise<void>;
     linkCurrentUserMember: (familyId: string, memberId: string) => Promise<void>;
+
+    // Public Share
+    loadPublicFamily: (family: Family, members: FamilyMember[]) => void;
 }
 
 export const useStore = create<TreeState>((set, get) => ({
@@ -442,5 +445,15 @@ export const useStore = create<TreeState>((set, get) => ({
             console.error('Failed to link member:', error);
             throw error;
         }
+    },
+
+    loadPublicFamily: (family: Family, members: FamilyMember[]) => {
+        set({
+            currentFamily: family,
+            familyData: members,
+            isLoading: false,
+            // Ensure no user session is assumed/cleared if needed, though 'user' state might remain null
+            // We might want a flag 'isReadOnly' if we want to enforce UI restrictions based on store
+        });
     }
 }));

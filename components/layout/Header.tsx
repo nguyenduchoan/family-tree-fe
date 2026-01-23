@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Copy, Plus, Menu, User, LogOut } from "lucide-react";
+import { Copy, Plus, Menu, User, LogOut, Share2 } from "lucide-react";
 import { useStore } from "@/store/useStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import ShareFamilyModal from "@/components/features/family/ShareFamilyModal";
 
 export function Header() {
-    const { user, checkAuth, logout } = useStore();
+    const { user, checkAuth, logout, currentFamily } = useStore();
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -32,6 +34,17 @@ export function Header() {
                 </nav>
 
                 <div className="flex items-center gap-3">
+                    {currentFamily && (
+                        <Button
+                            size="sm"
+                            className="mr-2 hidden sm:flex items-center gap-2 rounded-full border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-200"
+                            onClick={() => setIsShareModalOpen(true)}
+                        >
+                            <Share2 className="w-4 h-4" />
+                            <span className="text-xs font-bold uppercase tracking-wider">Chia sẻ</span>
+                        </Button>
+                    )}
+
                     {user ? (
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
@@ -66,6 +79,8 @@ export function Header() {
                     </button>
                 </div>
             </div>
+
+            <ShareFamilyModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
         </header>
     );
 }
