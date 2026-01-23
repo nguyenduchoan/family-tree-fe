@@ -104,6 +104,7 @@ interface TreeState {
     generateShareLink: (familyId: string) => Promise<string>;
 }
 
+// Zustand Store Definition
 export const useStore = create<TreeState>((set, get) => ({
     user: null,
     currentFamily: null,
