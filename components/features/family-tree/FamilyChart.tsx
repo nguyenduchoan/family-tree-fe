@@ -16,7 +16,7 @@ import 'reactflow/dist/style.css';
 
 import { useStore } from '@/store/useStore';
 import { getLayoutedElements } from '@/lib/family-tree/layout';
-import { buildFamilyGraph } from '@/lib/family-tree/treeUtils';
+import { buildFamilyGraph, getDescendants } from '@/lib/family-tree/treeUtils';
 import GlassFamilyNode from './GlassFamilyNode';
 import { cn } from '@/lib/utils';
 import { FamilyMember } from '@/types';
@@ -53,10 +53,25 @@ function FamilyChartContent({ onMemberClick }: FamilyChartProps) {
     useEffect(() => {
         if (!familyData || familyData.length === 0) return;
 
+        // 1. Build Graph
         const { nodes: rawNodes, edges: rawEdges } = buildFamilyGraph(familyData);
 
-        // Apply Auto Layout (Dagre)
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rawNodes, rawEdges);
+        // 2. Filter Hidden Nodes (Collapse Logic)
+        const hiddenNodeIds = new Set<string>();
+        collapsedNodes.forEach((collapsedId) => {
+            // Need to import getDescendants from treeUtils
+            // Assuming we added it to the named exports
+            const descendants = getDescendants(collapsedId, rawEdges);
+            descendants.forEach(d => hiddenNodeIds.add(d));
+        });
+
+        const visibleNodes = rawNodes.filter(n => !hiddenNodeIds.has(n.id));
+        const visibleEdges = rawEdges.filter(e =>
+            !hiddenNodeIds.has(e.source) && !hiddenNodeIds.has(e.target)
+        );
+
+        // 3. Apply Auto Layout (Dagre) on VISIBLE elements only
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(visibleNodes, visibleEdges);
 
         setNodesState(layoutedNodes);
         setEdgesState(layoutedEdges);
@@ -94,7 +109,7 @@ function FamilyChartContent({ onMemberClick }: FamilyChartProps) {
             });
         }
 
-    }, [familyData, setNodes, setEdges, setNodesState, setEdgesState, isTreeReady, setCenter]);
+    }, [familyData, collapsedNodes, setNodes, setEdges, setNodesState, setEdgesState, isTreeReady, setCenter]);
 
     return (
         <div className="w-full h-full min-h-[600px] bg-background">

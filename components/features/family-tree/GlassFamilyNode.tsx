@@ -132,7 +132,7 @@ const GlassFamilyNode = ({ id, data, selected }: NodeProps<FamilyNodeData>) => {
 
             {/* Stats Footer (Only if there are descendants) */}
             {totalChildren > 0 && (
-                <div className="bg-white/30 border-t border-white/20 px-3 py-1.5 flex items-center justify-center gap-4 rounded-b-xl">
+                <div className="bg-white/30 border-t border-white/20 px-3 py-1.5 pb-3 flex items-center justify-center gap-4 rounded-b-xl">
                     <div className="text-[10px] font-medium text-gray-500 flex items-center gap-1" title="Số con trực tiếp">
                         <User size={12} className="text-blue-500" />
                         <span>{totalChildren} con</span>

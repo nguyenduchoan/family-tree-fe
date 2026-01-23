@@ -16,6 +16,26 @@ const PARTNER_COLORS = [
     '#dc2626', // Red-600
 ];
 
+export const getDescendants = (nodeId: string, edges: Edge[]): string[] => {
+    const descendants = new Set<string>();
+    const queue = [nodeId];
+
+    while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        // Find edges starting from currentId
+        const childEdges = edges.filter(edge => edge.source === currentId);
+
+        childEdges.forEach(edge => {
+            if (!descendants.has(edge.target)) {
+                descendants.add(edge.target);
+                queue.push(edge.target);
+            }
+        });
+    }
+
+    return Array.from(descendants);
+};
+
 export const buildFamilyGraph = (members: FamilyMember[], rootId?: string) => {
     const nodes: Node<FamilyNodeData>[] = [];
     const edges: Edge[] = [];
