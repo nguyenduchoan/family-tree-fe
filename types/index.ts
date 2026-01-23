@@ -39,6 +39,18 @@ export interface FamilyMember {
     birthPlace?: string;
 }
 
+export interface FamilyEvent {
+    id: string;
+    familyId: string;
+    memberId: string;
+    title: string;
+    date: string; // ISO Date YYYY-MM-DD
+    type: 'BIRTHDAY' | 'DEATH_ANNIVERSARY' | 'CUSTOM';
+    calendarType: 'SOLAR' | 'LUNAR';
+    isRecurring: boolean;
+    reminderDays: number;
+}
+
 export interface CreateMemberRequest {
     name: string;
     nickname?: string;

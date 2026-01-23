@@ -6,6 +6,8 @@ import { FamilyChart } from "@/components/features/family-tree/FamilyChart";
 import { MemberDetailPanel } from "@/components/features/family-tree/MemberDetailPanel";
 import AddMemberModal from "@/components/features/family/AddMemberModal";
 import EditMemberModal from "@/components/features/family/EditMemberModal";
+import { CreateFamilyModal } from "@/components/features/family/CreateFamilyModal";
+import EventModal from "@/components/features/events/EventModal";
 import { useEffect, useState } from "react";
 import { FamilyMember } from "@/types";
 import { useStore } from "@/store/useStore";
@@ -59,6 +61,31 @@ export default function FamilyTreePage() {
         loadData();
     }, [currentFamily, fetchMembers, fetchCurrentUserMemberId, familyData.length]);
 
+    // Check for upcoming events
+    const { fetchEvents, events } = useStore();
+    useEffect(() => {
+        if (currentFamily) {
+            fetchEvents(currentFamily.id);
+        }
+    }, [currentFamily, fetchEvents]);
+
+    useEffect(() => {
+        if (events.length > 0) {
+            const today = new Date();
+            const upcoming = events.filter(e => {
+                const eventDate = new Date(e.date);
+                const diffTime = eventDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 && diffDays <= 3; // Notify for events in next 3 days
+            });
+
+            if (upcoming.length > 0) {
+                // Simple mock notification for now
+                console.log("Upcoming events:", upcoming);
+            }
+        }
+    }, [events]);
+
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -83,6 +110,10 @@ export default function FamilyTreePage() {
                             </div>
                             <AddMemberModal />
                             <EditMemberModal />
+                            <AddMemberModal />
+                            <EditMemberModal />
+                            <CreateFamilyModal isOpen={false} onClose={() => { }} /> {/* Provisional fix: Modal needs state props if used here */}
+                            <EventModal />
                             <MemberDetailPanel />
                         </>
                     ) : (

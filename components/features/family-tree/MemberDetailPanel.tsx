@@ -4,6 +4,9 @@ import { X, User, Calendar, MapPin, Heart, Plus, Edit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/store/useStore";
 
+import { useState, useEffect } from "react";
+import EventList from "@/components/features/events/EventList";
+
 export function MemberDetailPanel() {
     const {
         selectedMemberId,
@@ -13,13 +16,28 @@ export function MemberDetailPanel() {
         openAddRelationshipModal,
         openAddMemberModal,
         openEditMemberModal,
-        currentUserMemberId
+        currentUserMemberId,
+        fetchEvents,
+        events,
+        openEventModal,
+        deleteEvent,
+        openEventModal: openEditEvent // Reuse for edit? Store needs logic
     } = useStore();
+
+    const [activeTab, setActiveTab] = useState<'INFO' | 'EVENTS'>('INFO');
 
     const member = familyData.find(m => m.id === selectedMemberId);
 
+    // Fetch events when member changes
+    useEffect(() => {
+        if (currentFamily) {
+            fetchEvents(currentFamily.id);
+        }
+    }, [currentFamily?.id, fetchEvents]);
+
     if (!selectedMemberId || !member) return null;
 
+    const memberEvents = events.filter(e => e.memberId === member.id);
     const isViewer = currentFamily?.role === 'VIEWER';
 
     // Helper to get formatted name groups
@@ -74,9 +92,31 @@ export function MemberDetailPanel() {
                         </button>
                     </div>
 
+                    {/* Tabs */}
+                    <div className="flex border-b border-gray-100 bg-white/30">
+                        <button
+                            onClick={() => setActiveTab('INFO')}
+                            className={cn(
+                                "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
+                                activeTab === 'INFO' ? "border-blue-500 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                            )}
+                        >
+                            Thông tin
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('EVENTS')}
+                            className={cn(
+                                "flex-1 py-3 text-sm font-bold border-b-2 transition-colors",
+                                activeTab === 'EVENTS' ? "border-purple-500 text-purple-600 bg-purple-50/50" : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                            )}
+                        >
+                            Sự kiện ({memberEvents.length})
+                        </button>
+                    </div>
+
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-thin scrollbar-thumb-gray-200">
-                        {/* Avatar & Basic Info */}
+                        {/* Avatar & Basic Info (Always Visible) */}
                         <div className="flex flex-col items-center relative">
                             <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-br from-blue-100 to-purple-100 border border-white shadow-xl mb-4 relative group cursor-pointer overflow-hidden">
                                 {member.avatar ? (
@@ -100,88 +140,103 @@ export function MemberDetailPanel() {
                                     "{member.nickname}"
                                 </p>
                             )}
-
-                            {member.id === currentUserMemberId && (
-                                <span className="mt-2 text-[10px] font-bold uppercase tracking-wider text-white bg-gradient-to-r from-emerald-500 to-teal-500 px-3 py-0.5 rounded shadow-sm">
-                                    Là Bạn
-                                </span>
-                            )}
                         </div>
 
-                        {/* Details Grid */}
-                        <div className="space-y-4">
-                            <InfoCard
-                                icon={<Calendar className="w-5 h-5 text-blue-500" />}
-                                label="Ngày sinh"
-                                value={member.birthDate}
-                                subValue={member.birthPlace}
-                            />
+                        {activeTab === 'INFO' ? (
+                            <>
+                                {/* Details Grid */}
+                                <div className="space-y-4">
+                                    <InfoCard
+                                        icon={<Calendar className="w-5 h-5 text-blue-500" />}
+                                        label="Ngày sinh"
+                                        value={member.birthDate}
+                                        subValue={member.birthPlace}
+                                    />
 
-                            {member.deathDate && (
-                                <InfoCard
-                                    icon={<div className="w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center"><div className="w-2 h-2 bg-white rounded-full opacity-50" /></div>}
-                                    label="Ngày mất"
-                                    value={member.deathDate}
-                                    className="bg-gray-50 border-gray-200"
+                                    {member.deathDate && (
+                                        <InfoCard
+                                            icon={<div className="w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center"><div className="w-2 h-2 bg-white rounded-full opacity-50" /></div>}
+                                            label="Ngày mất"
+                                            value={member.deathDate}
+                                            className="bg-gray-50 border-gray-200"
+                                        />
+                                    )}
+
+                                    <InfoCard
+                                        icon={<MapPin className="w-5 h-5 text-orange-500" />}
+                                        label="Địa chỉ / Quê quán"
+                                        value={member.address}
+                                    />
+                                </div>
+
+                                {/* Relationships */}
+                                <div className="space-y-6 pt-4 border-t border-gray-100">
+                                    {/* Spouses */}
+                                    <RelationshipSection
+                                        title="Vợ / Chồng"
+                                        color="pink"
+                                        groups={getSpouseGroups()}
+                                        onSelect={(id: string) => setSelectedMember(id)}
+                                    />
+
+                                    {/* Parents */}
+                                    <RelationshipSection
+                                        title="Cha / Mẹ"
+                                        color="blue"
+                                        groups={getParentGroups()}
+                                        onSelect={(id: string) => setSelectedMember(id)}
+                                    />
+
+                                    {/* Children */}
+                                    <RelationshipSection
+                                        title="Con cái"
+                                        color="emerald"
+                                        groups={getChildrenGroups()}
+                                        onSelect={(id: string) => setSelectedMember(id)}
+                                    />
+                                </div>
+
+                                {/* Bio */}
+                                {member.bio && (
+                                    <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
+                                        <h4 className="font-bold text-gray-900 mb-2 text-sm uppercase flex items-center gap-2">
+                                            <Edit size={14} /> Tiểu sử
+                                        </h4>
+                                        <p className="text-gray-600 leading-relaxed text-sm italic">
+                                            "{member.bio}"
+                                        </p>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="font-bold text-gray-700">Danh sách sự kiện</h4>
+                                    <button
+                                        onClick={() => openEventModal(member.id)}
+                                        className="text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                    >
+                                        <Plus size={14} /> Thêm mới
+                                    </button>
+                                </div>
+                                <EventList
+                                    events={memberEvents}
+                                    onDelete={deleteEvent}
+                                    onEdit={(event) => {
+                                        // TODO: Implement Edit Event (Open modal with data)
+                                        // For now just open add modal
+                                        openEventModal(member.id);
+                                    }}
                                 />
-                            )}
-
-                            <InfoCard
-                                icon={<MapPin className="w-5 h-5 text-orange-500" />}
-                                label="Địa chỉ / Quê quán"
-                                value={member.address}
-                            />
-                        </div>
-
-                        {/* Relationships */}
-                        <div className="space-y-6 pt-4 border-t border-gray-100">
-                            {/* Spouses */}
-                            <RelationshipSection
-                                title="Vợ / Chồng"
-                                color="pink"
-                                groups={getSpouseGroups()}
-                                onSelect={(id: string) => setSelectedMember(id)}
-                            />
-
-                            {/* Parents */}
-                            <RelationshipSection
-                                title="Cha / Mẹ"
-                                color="blue"
-                                groups={getParentGroups()}
-                                onSelect={(id: string) => setSelectedMember(id)}
-                            />
-
-                            {/* Children */}
-                            <RelationshipSection
-                                title="Con cái"
-                                color="emerald"
-                                groups={getChildrenGroups()}
-                                onSelect={(id: string) => setSelectedMember(id)}
-                            />
-                        </div>
-
-                        {/* Bio */}
-                        {member.bio && (
-                            <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                                <h4 className="font-bold text-gray-900 mb-2 text-sm uppercase flex items-center gap-2">
-                                    <Edit size={14} /> Tiểu sử
-                                </h4>
-                                <p className="text-gray-600 leading-relaxed text-sm italic">
-                                    "{member.bio}"
-                                </p>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer Actions */}
-                    {!isViewer && (
+                    {/* Footer Actions (Only for Info Tab) */}
+                    {!isViewer && activeTab === 'INFO' && (
                         <div className="p-5 border-t border-gray-100 bg-gray-50/50 grid grid-cols-2 gap-3">
                             <button
-                                onClick={() => openAddMemberModal(member.id, 'PARENT_CHILD')} // Assuming adding child relative to this member? Or reuse AddRelationship? 
-                                // Actually AddMember logic: Add someone relative to this person.
-                                // Logic in AddMemberModal expects relatedMemberId and handles types.
-                                // If I want to add a child to this person:
-                                // openAddMemberModal(member.id, 'PARENT_CHILD')
+                                onClick={() => openAddMemberModal(member.id, 'PARENT_CHILD')}
                                 className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all shadow-sm"
                             >
                                 <Plus size={18} /> Thêm thành viên

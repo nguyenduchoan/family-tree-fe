@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { type Edge, type Node } from 'reactflow';
-import type { FamilyMember, User, Family, FamilyMemberUser } from '../types';
+import type { FamilyMember, User, Family, FamilyMemberUser, FamilyEvent } from '../types';
 import { authApi } from '../api/auth';
 import { familyApi } from '../api/family';
 import { memberApi } from '../api/member';
@@ -80,6 +80,18 @@ interface TreeState {
     currentUserMemberId: string | null;
     fetchCurrentUserMemberId: (familyId: string) => Promise<void>;
     linkCurrentUserMember: (familyId: string, memberId: string) => Promise<void>;
+
+    // Event Management
+    events: FamilyEvent[];
+    eventModal: {
+        isOpen: boolean;
+        memberId?: string;
+    };
+    fetchEvents: (familyId: string) => void;
+    addEvent: (event: FamilyEvent) => void;
+    deleteEvent: (eventId: string) => void;
+    openEventModal: (memberId?: string) => void;
+    closeEventModal: () => void;
 
     // Public Share
     loadPublicFamily: (family: Family, members: FamilyMember[]) => void;
@@ -437,6 +449,7 @@ export const useStore = create<TreeState>((set, get) => ({
             set({ currentUserMemberId: null });
         }
     },
+
     linkCurrentUserMember: async (familyId: string, memberId: string) => {
         try {
             await memberApi.linkMember(familyId, memberId);
@@ -446,6 +459,54 @@ export const useStore = create<TreeState>((set, get) => ({
             throw error;
         }
     },
+
+    // Event Management Implementation (Local Storage Mock for now)
+    events: [],
+    eventModal: { isOpen: false },
+
+    fetchEvents: (familyId) => {
+        if (typeof window === 'undefined') return;
+        try {
+            const stored = localStorage.getItem(`events-${familyId}`);
+            if (stored) {
+                set({ events: JSON.parse(stored) });
+            } else {
+                set({ events: [] });
+            }
+        } catch (e) {
+            console.error("Failed to load events", e);
+        }
+    },
+
+    addEvent: (event) => set((state) => {
+        const newEvents = [...state.events, event];
+        localStorage.setItem(`events-${event.familyId}`, JSON.stringify(newEvents));
+        return { events: newEvents };
+    }),
+
+    deleteEvent: (eventId) => set((state) => {
+        const eventToDelete = state.events.find(e => e.id === eventId);
+        if (!eventToDelete) return {};
+
+        const newEvents = state.events.filter(e => e.id !== eventId);
+        localStorage.setItem(`events-${eventToDelete.familyId}`, JSON.stringify(newEvents));
+        return { events: newEvents };
+    }),
+
+    openEventModal: (memberId) => set({
+        eventModal: {
+            isOpen: true,
+            memberId
+        }
+    }),
+
+    closeEventModal: () => set({
+        eventModal: {
+            isOpen: false,
+            memberId: undefined
+        }
+    })
+    ,
 
     loadPublicFamily: (family: Family, members: FamilyMember[]) => {
         set({
