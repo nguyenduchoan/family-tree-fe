@@ -532,5 +532,8 @@ export const useStore = create<TreeState>((set, get) => ({
             console.error('Failed to generate share link:', error);
             throw error;
         }
-    }
+    },
+
+    focusMemberId: null,
+    setFocusMember: (id) => set({ focusMemberId: id })
 }));
