@@ -99,10 +99,11 @@ export default function FamilyTreePage() {
                     <h1 className="text-3xl font-serif font-bold text-foreground">
                         {currentFamily ? `Dòng họ ${currentFamily.name}` : 'Đang tải gia phả...'}
                     </h1>
+                    <p className="text-gray-500">
                         {currentFamily?.description || '...'}
                     </p>
                     <div className="mt-4">
-                        <button 
+                        <button
                             onClick={() => setIsCalendarOpen(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all font-bold text-gray-700"
                         >
@@ -134,7 +135,7 @@ export default function FamilyTreePage() {
                 </div>
             </main >
 
-        <Footer />
+            <Footer />
         </div >
     );
 }
