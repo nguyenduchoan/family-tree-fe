@@ -10,14 +10,21 @@ export default function MemberSearch() {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Helper to remove accents for Vietnamese search
+    const removeAccents = (str: string) => {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    };
+
     // Filter members based on query
     const filteredMembers = useMemo(() => {
         if (!query.trim()) return [];
-        const lowerQuery = query.toLowerCase();
-        return familyData.filter(member =>
-            member.name.toLowerCase().includes(lowerQuery) ||
-            member.nickname?.toLowerCase().includes(lowerQuery)
-        ).slice(0, 10); // Limit results
+        const normalizedQuery = removeAccents(query.toLowerCase());
+
+        return familyData.filter(member => {
+            const name = removeAccents(member.name.toLowerCase());
+            const nickname = member.nickname ? removeAccents(member.nickname.toLowerCase()) : '';
+            return name.includes(normalizedQuery) || nickname.includes(normalizedQuery);
+        }).slice(0, 10);
     }, [query, familyData]);
 
     // Handle outside click to close

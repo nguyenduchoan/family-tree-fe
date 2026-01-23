@@ -34,29 +34,49 @@ interface FamilyChartProps {
 
 // Inner component containing the logic that uses useReactFlow
 function FamilyChartContent({ onMemberClick }: FamilyChartProps) {
-    const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges, familyData, collapsedNodes, focusMemberId, setFocusMember, setSelectedMember } = useStore();
+    const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges, familyData, collapsedNodes, focusMemberId, setFocusMember, setSelectedMember, expandNodes } = useStore();
     const { fitView, setCenter, getNodes } = useReactFlow();
 
     // Focus Effect
     useEffect(() => {
-        if (focusMemberId) {
+        if (focusMemberId && familyData.length > 0) {
             const currentNodes = getNodes();
             const node = currentNodes.find(n => n.id === focusMemberId);
 
             if (node) {
-                // Determine center position (assuming node width ~280 and height ~180 if not measured)
+                // Determine center position
                 const x = node.position.x + (node.width ?? 280) / 2;
                 const y = node.position.y + (node.height ?? 180) / 2;
 
                 setCenter(x, y, { zoom: 1.2, duration: 1000 });
                 setSelectedMember(focusMemberId);
-                onMemberClick(node.data); // Open detail panel
+                onMemberClick(node.data);
 
-                // Reset focus trigger
                 setFocusMember(null);
+            } else {
+                // Try to expand ancestors
+                const member = familyData.find(m => m.id === focusMemberId);
+                if (member) {
+                    const ancestorsToExpand: string[] = [];
+                    const findAncestors = (currentId: string) => {
+                        const current = familyData.find(m => m.id === currentId);
+                        if (current && current.parents) {
+                            current.parents.forEach(parentId => {
+                                ancestorsToExpand.push(parentId);
+                                findAncestors(parentId);
+                            });
+                        }
+                    };
+                    findAncestors(focusMemberId);
+
+                    const collapsedAncestors = ancestorsToExpand.filter(id => collapsedNodes.includes(id));
+                    if (collapsedAncestors.length > 0) {
+                        expandNodes(collapsedAncestors);
+                    }
+                }
             }
         }
-    }, [focusMemberId, getNodes, setCenter, setSelectedMember, setFocusMember, onMemberClick]);
+    }, [focusMemberId, familyData, collapsedNodes, getNodes, setCenter, setSelectedMember, setFocusMember, onMemberClick, expandNodes]);
 
     // State to track if React Flow instance is initialized and ready
     const [isTreeReady, setIsTreeReady] = useState(false);
