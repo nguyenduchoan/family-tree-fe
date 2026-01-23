@@ -42,7 +42,7 @@ export interface FamilyMember {
 export interface FamilyEvent {
     id: string;
     familyId: string;
-    memberId: string;
+    memberId?: string; // Optional for global family events
     title: string;
     date: string; // ISO Date YYYY-MM-DD
     type: 'BIRTHDAY' | 'DEATH_ANNIVERSARY' | 'CUSTOM';

@@ -19,17 +19,18 @@ export default function EventModal() {
     });
 
     const isDeathAnniversary = formData.type === 'DEATH_ANNIVERSARY';
+    const isGlobal = !memberId; // context memberId from store
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!memberId || !formData.title || !formData.date) return;
+        if (!formData.title || !formData.date) return;
 
         const newEvent: FamilyEvent = {
             id: crypto.randomUUID(),
-            familyId: 'current', // Logic to get current family ID needed
-            memberId,
+            familyId: 'current', // Logic to get current family ID needed (Store should handle or pass it)
+            memberId: memberId || undefined,
             title: formData.title,
             date: formData.date,
             type: formData.type as any,
@@ -50,7 +51,9 @@ export default function EventModal() {
                         "text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r",
                         isDeathAnniversary ? "from-gray-700 to-gray-900" : "from-pink-500 to-purple-600"
                     )}>
-                        {isDeathAnniversary ? 'Thêm Ngày Giỗ' : 'Thêm Sự Kiện'}
+                        {isGlobal
+                            ? (isDeathAnniversary ? 'Thêm Ngày Giỗ (Chung)' : 'Thêm Sự Kiện Chung')
+                            : (isDeathAnniversary ? 'Thêm Ngày Giỗ' : 'Thêm Sự Kiện')}
                     </h2>
                     <button onClick={closeEventModal} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-white/50 rounded-full transition-all">
                         <X size={20} />

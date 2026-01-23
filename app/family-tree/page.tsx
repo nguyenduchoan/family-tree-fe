@@ -8,10 +8,12 @@ import AddMemberModal from "@/components/features/family/AddMemberModal";
 import EditMemberModal from "@/components/features/family/EditMemberModal";
 import { CreateFamilyModal } from "@/components/features/family/CreateFamilyModal";
 import EventModal from "@/components/features/events/EventModal";
+import FamilyCalendarModal from "@/components/features/calendar/FamilyCalendarModal";
 import { useEffect, useState } from "react";
 import { FamilyMember } from "@/types";
 import { useStore } from "@/store/useStore";
 import { useRouter } from "next/navigation";
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 export default function FamilyTreePage() {
     const {
@@ -23,6 +25,7 @@ export default function FamilyTreePage() {
     } = useStore();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     useEffect(() => {
         const init = async () => {
@@ -96,9 +99,17 @@ export default function FamilyTreePage() {
                     <h1 className="text-3xl font-serif font-bold text-foreground">
                         {currentFamily ? `Dòng họ ${currentFamily.name}` : 'Đang tải gia phả...'}
                     </h1>
-                    <p className="text-gray-500">
                         {currentFamily?.description || '...'}
                     </p>
+                    <div className="mt-4">
+                        <button 
+                            onClick={() => setIsCalendarOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all font-bold text-gray-700"
+                        >
+                            <CalendarIcon size={18} className="text-purple-600" />
+                            Lịch Gia Phả
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex-1 border-t border-gray-200 bg-gray-50/50 relative overflow-hidden">
@@ -110,10 +121,9 @@ export default function FamilyTreePage() {
                             </div>
                             <AddMemberModal />
                             <EditMemberModal />
-                            <AddMemberModal />
-                            <EditMemberModal />
-                            <CreateFamilyModal isOpen={false} onClose={() => { }} /> {/* Provisional fix: Modal needs state props if used here */}
+                            <CreateFamilyModal isOpen={false} onClose={() => { }} />
                             <EventModal />
+                            <FamilyCalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
                             <MemberDetailPanel />
                         </>
                     ) : (
@@ -122,9 +132,9 @@ export default function FamilyTreePage() {
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
-            <Footer />
-        </div>
+        <Footer />
+        </div >
     );
 }
