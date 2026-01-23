@@ -95,6 +95,7 @@ interface TreeState {
 
     // Public Share
     loadPublicFamily: (family: Family, members: FamilyMember[]) => void;
+    generateShareLink: (familyId: string) => Promise<string>;
 }
 
 export const useStore = create<TreeState>((set, get) => ({
@@ -516,5 +517,15 @@ export const useStore = create<TreeState>((set, get) => ({
             // Ensure no user session is assumed/cleared if needed, though 'user' state might remain null
             // We might want a flag 'isReadOnly' if we want to enforce UI restrictions based on store
         });
+    },
+
+    generateShareLink: async (familyId) => {
+        try {
+            const token = await familyApi.generateShareToken(familyId);
+            return `${window.location.origin}/share/${token}`;
+        } catch (error) {
+            console.error('Failed to generate share link:', error);
+            throw error;
+        }
     }
 }));

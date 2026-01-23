@@ -7,6 +7,8 @@ import EditMemberModal from "@/components/features/family/EditMemberModal";
 import { CreateFamilyModal } from "@/components/features/family/CreateFamilyModal";
 import EventModal from "@/components/features/events/EventModal";
 import FamilyCalendarModal from "@/components/features/calendar/FamilyCalendarModal";
+import ShareFamilyModal from "@/components/features/family/ShareFamilyModal";
+import FamilyMembersModal from "@/components/features/family/FamilyMembersModal";
 import { useEffect, useState } from "react";
 import { FamilyMember } from "@/types";
 import { useStore } from "@/store/useStore";
@@ -35,6 +37,8 @@ export default function FamilyTreePage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
+    const [isMembersOpen, setIsMembersOpen] = useState(false);
 
     useEffect(() => {
         const init = async () => {
@@ -126,7 +130,7 @@ export default function FamilyTreePage() {
                     <button
                         className="p-2 text-slate-500 hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-all"
                         title="Chia sẻ gia phả"
-                        onClick={() => {/* TODO: Implement Share */ }}
+                        onClick={() => setIsShareOpen(true)}
                     >
                         <Share2 size={20} />
                     </button>
@@ -157,6 +161,7 @@ export default function FamilyTreePage() {
 
                                 <DropdownMenu.Item
                                     className="flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg cursor-pointer outline-none transition-colors"
+                                    onClick={() => setIsMembersOpen(true)}
                                 >
                                     <Users size={16} />
                                     Quản lý thành viên
@@ -190,6 +195,8 @@ export default function FamilyTreePage() {
                         <CreateFamilyModal isOpen={false} onClose={() => { }} />
                         <EventModal />
                         <FamilyCalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} />
+                        <ShareFamilyModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} />
+                        <FamilyMembersModal isOpen={isMembersOpen} onClose={() => setIsMembersOpen(false)} />
                         <MemberDetailPanel />
                     </>
                 ) : (
