@@ -15,7 +15,10 @@ client.interceptors.request.use(
         if (typeof window !== 'undefined') {
             const token = localStorage.getItem('accessToken');
             if (token) {
+                // console.log('Attaching token to request:', config.url);
                 config.headers.Authorization = `Bearer ${token}`;
+            } else {
+                console.warn('No token found for request:', config.url);
             }
         }
         return config;

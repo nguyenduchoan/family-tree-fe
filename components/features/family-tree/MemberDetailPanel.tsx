@@ -184,7 +184,7 @@ export function MemberDetailPanel() {
                                 // openAddMemberModal(member.id, 'PARENT_CHILD')
                                 className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-all shadow-sm"
                             >
-                                <Plus size={18} /> Thêm quan hệ
+                                <Plus size={18} /> Thêm thành viên
                             </button>
                             <button
                                 onClick={(e) => {

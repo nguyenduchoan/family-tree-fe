@@ -317,9 +317,11 @@ export const useStore = create<TreeState>((set, get) => ({
                 if (parent && parent.spouses && parent.spouses.length > 0) {
                     const spouseId = parent.spouses[0];
                     try {
+                        // Add delay to prevent race conditions/backend locking
+                        await new Promise(resolve => setTimeout(resolve, 500));
                         await memberApi.addRelationship(familyId, spouseId, toMemberId, 'PARENT_CHILD');
                     } catch (e) {
-                        console.log('Auto-link spouse failed or already exists', e);
+                        console.warn('Auto-link spouse failed (likely already exists or auth redirect ignored)', e);
                     }
                 }
             }

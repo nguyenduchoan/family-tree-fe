@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AddMemberModal() {
     const { addMember, addMemberModal, closeAddMemberModal, familyData, currentFamily } = useStore();
@@ -40,7 +41,6 @@ export default function AddMemberModal() {
     }, [isOpen, relatedMemberId, relationType]);
 
     const availableMembers = familyData;
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!currentFamily) return;
@@ -54,9 +54,10 @@ export default function AddMemberModal() {
                     type: selectedType
                 } : undefined
             );
+            toast.success('Thêm thành viên thành công!');
             closeAddMemberModal();
         } catch (error) {
-            alert('Có lỗi xảy ra khi thêm thành viên');
+            toast.error('Có lỗi xảy ra khi thêm thành viên');
             console.error(error);
         } finally {
             setIsLoading(false);

@@ -36,6 +36,7 @@ export interface FamilyMember {
     twitter?: string;
     instagram?: string;
     linkedin?: string;
+    birthPlace?: string;
 }
 
 export interface CreateMemberRequest {
@@ -54,6 +55,7 @@ export interface CreateMemberRequest {
     twitter?: string;
     instagram?: string;
     linkedin?: string;
+    birthPlace?: string;
 }
 
 export interface FamilyNodeData {
