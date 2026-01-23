@@ -42,17 +42,41 @@ export default function FamilyTreePage() {
 
     useEffect(() => {
         const init = async () => {
-            // ... existing init logic ...
             if (!currentFamily) {
                 const storedFamilyId = localStorage.getItem('lastFamilyId');
                 if (!storedFamilyId) {
-                    router.push('/');
-                    return;
+                    // Optional: Check if user is logged in, if so fetch families and pick first? 
+                    // For now redirect or wait.
+                    // If we are on /family-tree we expect a family context.
+                    // Let's assume without family ID we go home.
+                    // But maybe checkAuth sets user first? 
+                    // Let's just try to fetch the specific family if logic exists or fetch all.
+                } else {
+                    // Restore family
+                    try {
+                        // We need a method to get family by ID directly or ensure families are fetched.
+                        // 'selectFamily' usually takes a family object. 
+                        // 'fetchFamilies' returns list.
+                        const families = await useStore.getState().fetchFamilies();
+                        const found = families.find(f => f.id === storedFamilyId);
+                        if (found) {
+                            selectFamily(found);
+                        } else {
+                            // Family not found or access lost
+                            localStorage.removeItem('lastFamilyId');
+                            router.push('/');
+                        }
+                    } catch (e) {
+                        console.error("Restoration failed", e);
+                        setIsLoading(false); // Stop loading even if fail
+                    }
                 }
+            } else {
+                setIsLoading(false);
             }
         };
         init();
-    }, [currentFamily, router]);
+    }, [currentFamily, router, selectFamily]);
 
     // Data Loading Effect
     useEffect(() => {
