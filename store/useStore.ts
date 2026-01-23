@@ -67,6 +67,11 @@ interface TreeState {
     setEdges: (edges: Edge[]) => void;
     setSelectedMember: (id: string | null) => void;
     toggleCollapse: (id: string) => void;
+
+    // Scan/Focus
+    focusMemberId: string | null;
+    setFocusMember: (id: string | null) => void;
+
     openAddRelationshipModal: (memberId: string, type?: 'SPOUSE' | 'PARENT_CHILD') => void;
     closeAddRelationshipModal: () => void;
 

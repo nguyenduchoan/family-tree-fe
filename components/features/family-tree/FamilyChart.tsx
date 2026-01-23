@@ -34,8 +34,29 @@ interface FamilyChartProps {
 
 // Inner component containing the logic that uses useReactFlow
 function FamilyChartContent({ onMemberClick }: FamilyChartProps) {
-    const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges, familyData, collapsedNodes } = useStore();
-    const { fitView, setCenter } = useReactFlow();
+    const { nodes: storeNodes, edges: storeEdges, setNodes, setEdges, familyData, collapsedNodes, focusMemberId, setFocusMember, setSelectedMember } = useStore();
+    const { fitView, setCenter, getNodes } = useReactFlow();
+
+    // Focus Effect
+    useEffect(() => {
+        if (focusMemberId) {
+            const currentNodes = getNodes();
+            const node = currentNodes.find(n => n.id === focusMemberId);
+
+            if (node) {
+                // Determine center position (assuming node width ~280 and height ~180 if not measured)
+                const x = node.position.x + (node.width ?? 280) / 2;
+                const y = node.position.y + (node.height ?? 180) / 2;
+
+                setCenter(x, y, { zoom: 1.2, duration: 1000 });
+                setSelectedMember(focusMemberId);
+                onMemberClick(node.data); // Open detail panel
+
+                // Reset focus trigger
+                setFocusMember(null);
+            }
+        }
+    }, [focusMemberId, getNodes, setCenter, setSelectedMember, setFocusMember, onMemberClick]);
 
     // State to track if React Flow instance is initialized and ready
     const [isTreeReady, setIsTreeReady] = useState(false);

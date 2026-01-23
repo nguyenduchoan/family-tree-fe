@@ -9,6 +9,7 @@ import EventModal from "@/components/features/events/EventModal";
 import FamilyCalendarModal from "@/components/features/calendar/FamilyCalendarModal";
 import ShareFamilyModal from "@/components/features/family/ShareFamilyModal";
 import FamilyMembersModal from "@/components/features/family/FamilyMembersModal";
+import MemberSearch from "@/components/features/search/MemberSearch";
 import { useEffect, useState } from "react";
 import { FamilyMember } from "@/types";
 import { useStore } from "@/store/useStore";
@@ -137,6 +138,11 @@ export default function FamilyTreePage() {
                             </p>
                         </div>
                     )}
+                </div>
+
+                {/* Center: Search Bar */}
+                <div className="flex-1 max-w-md mx-6">
+                    <MemberSearch />
                 </div>
 
                 {/* Right: Actions Toolbar */}
